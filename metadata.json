@@ -1,0 +1,6 @@
+{
+  "name": "Fiesta ST Launcher",
+  "description": "Custom automotive HOME launcher for Ford Fiesta Android head units.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

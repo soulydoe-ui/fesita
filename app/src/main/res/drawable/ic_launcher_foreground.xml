@@ -1,0 +1,28 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54">
+        <!-- Badge background plate -->
+        <path
+            android:fillColor="#1C1E24"
+            android:strokeColor="#3A3D48"
+            android:strokeWidth="1.5"
+            android:pathData="M24,36 L84,36 L80,72 L20,72 Z" />
+        <!-- Red ST Performance highlight bar -->
+        <path
+            android:fillColor="#E50914"
+            android:pathData="M25,68 L79,68 L78,72 L24,72 Z" />
+        <!-- Letter S (slanted automotive ST style) -->
+        <path
+            android:fillColor="#E50914"
+            android:pathData="M32,44 L48,44 L47,48 L37,48 L36,52 L46,53 C48,53.2 49,55 48.5,57 L47,63 C46.5,65 44.5,66 42,66 L27,66 L28,62 L38,62 L39,58 L29,57 C27,56.8 26,55 26.5,53 L28,47 C28.5,45 30.5,44 32,44 Z" />
+        <!-- Letter T (slanted automotive ST style) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M50,44 L72,44 L71,49 L63,49 L59.5,66 L53.5,66 L57,49 L51,49 Z" />
+    </group>
+</vector>
