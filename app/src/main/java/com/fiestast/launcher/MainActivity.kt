@@ -1,14 +1,16 @@
 package com.fiestast.launcher
 
+import android.Manifest
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.view.WindowInsets
-import android.view.WindowInsetsController
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -20,6 +22,7 @@ import com.fiestast.launcher.android.media.AndroidMediaService
 import com.fiestast.launcher.android.navigation.AndroidNavigationService
 import com.fiestast.launcher.android.phone.AndroidPhoneService
 import com.fiestast.launcher.android.radio.AndroidRadioService
+import com.fiestast.launcher.android.receivers.SystemStateReceiver
 import com.fiestast.launcher.android.vehicle.AndroidVehicleModeService
 import com.fiestast.launcher.android.zlink.AndroidZLinkService
 import com.fiestast.launcher.data.repository.SharedPreferencesLauncherRepository
@@ -30,6 +33,17 @@ import com.fiestast.launcher.ui.viewmodel.LauncherViewModel
 open class MainActivity : ComponentActivity() {
 
     private lateinit var viewModel: LauncherViewModel
+    private var systemStateReceiver: SystemStateReceiver? = null
+
+    // Safe permission launcher for Android 12+ (API 31+) Bluetooth Connect
+    private val bluetoothPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        Log.i(TAG, "BLUETOOTH_CONNECT permission result: granted=$isGranted")
+        if (::viewModel.isInitialized) {
+            viewModel.refreshBluetoothState()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +82,18 @@ open class MainActivity : ComponentActivity() {
             zlinkService = zlinkService
         )
 
+        // Register dynamic system receiver for Time/Timezone and Power events
+        systemStateReceiver = SystemStateReceiver(
+            onTimeOrTimezoneChanged = {
+                viewModel.onTimeOrTimezoneChanged()
+            }
+        ).also { receiver ->
+            receiver.register(applicationContext)
+        }
+
+        // Check and safely request BLUETOOTH_CONNECT permission on Android 12+ (API 31+)
+        checkBluetoothPermissions()
+
         setContent {
             FiestaSTTheme {
                 val navController = rememberNavController()
@@ -75,6 +101,37 @@ open class MainActivity : ComponentActivity() {
                     navController = navController,
                     viewModel = viewModel
                 )
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::viewModel.isInitialized) {
+            viewModel.refreshBluetoothState()
+            viewModel.onTimeOrTimezoneChanged()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        systemStateReceiver?.unregister(applicationContext)
+        systemStateReceiver = null
+    }
+
+    private fun checkBluetoothPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val hasConnectPermission = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!hasConnectPermission) {
+                try {
+                    bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Could not launch Bluetooth permission request: ${t.message}")
+                }
             }
         }
     }
@@ -96,5 +153,9 @@ open class MainActivity : ComponentActivity() {
         } catch (_: Throwable) {
             // Silently ignore if window decor is not ready during early lifecycle
         }
+    }
+
+    companion object {
+        private const val TAG = "FiestaSTMainActivity"
     }
 }

@@ -15,7 +15,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,8 +38,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.fiestast.launcher.domain.model.DriverMode
 import com.fiestast.launcher.ui.theme.BrightRed
 import com.fiestast.launcher.ui.theme.LightGray
@@ -79,9 +84,10 @@ sealed interface VehicleHeroImageState {
 fun VehicleHeroImageWrapper(
     driverMode: DriverMode,
     modifier: Modifier = Modifier,
-    @DrawableRes imageResId: Int? = null,
+    @DrawableRes imageResId: Int? = R.drawable.fiesta_st_hero,
     imageResourceName: String = "fiesta_st_hero",
-    contentDescription: String = "Ford Fiesta ST Hot Hatch"
+    contentDescription: String = "Ford Fiesta ST Hot Hatch",
+    contentEndPadding: Dp = 118.dp
 ) {
     val context = LocalContext.current
 
@@ -94,12 +100,12 @@ fun VehicleHeroImageWrapper(
     val isSport = driverMode == DriverMode.SPORT
     val isIndividual = driverMode == DriverMode.INDIVIDUAL
 
-    // Camera scale / zoom push: 1.05f on SPORT, 1.0f on NORMAL/INDIVIDUAL
+    // Enhanced camera scale: slightly larger base size (1.08x) with dynamic mode push
     val cameraScale by animateFloatAsState(
         targetValue = when (driverMode) {
-            DriverMode.SPORT -> 1.05f
-            DriverMode.INDIVIDUAL -> 1.02f
-            DriverMode.NORMAL -> 1.00f
+            DriverMode.SPORT -> 1.15f
+            DriverMode.INDIVIDUAL -> 1.11f
+            DriverMode.NORMAL -> 1.08f
         },
         animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
         label = "cameraScale"
@@ -231,44 +237,87 @@ fun VehicleHeroImageWrapper(
                 )
         )
 
-        // LAYER 3: Original Fiesta Photo (with driver mode camera push & scale)
-        when (val state = loadState) {
-            is VehicleHeroImageState.Success -> {
-                Image(
-                    bitmap = state.bitmap,
-                    contentDescription = contentDescription,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .scale(cameraScale)
-                        .testTag("vehicle_hero_image_success"),
-                    contentScale = ContentScale.Crop,
-                    alignment = Alignment.Center
-                )
-
-                // LAYER 4: Shadow & Reflection Overlay (preserves original car pixels)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Transparent,
-                                    Color(0x33000000),
-                                    Color(0xBB080A0E)
-                                )
+        // LAYER 3: Dedicated Vehicle Presentation Zone (Properly Centered in Focal Area)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 14.dp, end = contentEndPadding, top = 6.dp, bottom = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // 3a. Subtle cinematic red glow centered directly behind the car body
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .fillMaxHeight(0.85f)
+                    .align(Alignment.Center)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                glowColor.copy(alpha = 0.28f * ambientPulse),
+                                glowColor.copy(alpha = 0.06f * ambientPulse),
+                                Color.Transparent
                             )
                         )
-                )
+                    )
+            )
+
+            // 3b. Ground contact shadow beneath the wheels
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp)
+                    .fillMaxWidth(0.85f)
+                    .height(28.dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xD0000000),
+                                Color(0x60000000),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+
+            // 3c. Original Fiesta ST Image (Slightly larger, preserved proportions, main visual focal point)
+            when (val state = loadState) {
+                is VehicleHeroImageState.Success -> {
+                    Image(
+                        bitmap = state.bitmap,
+                        contentDescription = contentDescription,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .scale(cameraScale)
+                            .testTag("vehicle_hero_image_success"),
+                        contentScale = ContentScale.Fit,
+                        alignment = Alignment.Center
+                    )
+                }
+
+                is VehicleHeroImageState.Loading,
+                is VehicleHeroImageState.Error -> {
+                    // Clean studio background with ambient lighting; zero artificial vehicles
+                }
             }
 
-            is VehicleHeroImageState.Loading,
-            is VehicleHeroImageState.Error -> {
-                // Keep clean studio background with ambient lighting; no text overlay, no artificial vehicle
-            }
+            // 3d. Subtle ground fade blending naturally into the black/red interface
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(18.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color(0x66090B0E)
+                            )
+                        )
+                    )
+            )
         }
 
-        // LAYER 5: UI Overlays (subtle driver mode atmospheric sweep)
+        // LAYER 4: UI Overlays (subtle driver mode atmospheric sweep)
         if (isSport) {
             Box(
                 modifier = Modifier

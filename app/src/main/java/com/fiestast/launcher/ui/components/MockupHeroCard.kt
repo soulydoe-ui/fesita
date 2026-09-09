@@ -138,9 +138,11 @@ fun FiestaSTCenterpieceHeroCard(
             .border(1.dp, CardBorder.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
             .testTag("mockup_hero_card")
     ) {
-        // State-managed Vehicle Hero Component (defaults to Deep Black/Graphite placeholder on failure)
+        // State-managed Vehicle Hero Component using the exact Fiesta ST photograph
         VehicleHeroImageWrapper(
             driverMode = driverMode,
+            imageResId = com.example.R.drawable.fiesta_st_hero,
+            contentEndPadding = 118.dp,
             modifier = Modifier.fillMaxSize()
         )
 

@@ -39,11 +39,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fiestast.launcher.android.notifications.LauncherNotificationListener
 import com.fiestast.launcher.domain.model.DriverMode
 import com.fiestast.launcher.domain.model.ServiceStatus
 import com.fiestast.launcher.navigation.NavRoutes
@@ -321,6 +323,38 @@ private fun SettingsSection(viewModel: LauncherViewModel) {
                     checkedTrackColor = BrightRed
                 ),
                 modifier = Modifier.testTag("settings_metric_switch")
+            )
+        }
+
+        val context = LocalContext.current
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Notification Access", color = PureWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("Grant access for media player & navigation turn-by-turn sync", color = LightGray, fontSize = 11.sp)
+            }
+            AutomotiveButton(
+                text = "Configure",
+                onClick = {
+                    try {
+                        val intent = LauncherNotificationListener.createNotificationListenerSettingsIntent(context)
+                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                    } catch (_: Throwable) {
+                        try {
+                            val fallback = android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                            fallback.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(fallback)
+                        } catch (_: Throwable) {
+                            // Safely ignored if device lacks notification listener settings
+                        }
+                    }
+                },
+                modifier = Modifier.padding(start = 12.dp),
+                testTag = "settings_notification_access_button"
             )
         }
     }

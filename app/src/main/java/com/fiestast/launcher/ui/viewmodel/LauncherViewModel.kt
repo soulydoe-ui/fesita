@@ -79,6 +79,14 @@ class LauncherViewModel(
             initialValue = ClockData(timeFormatted = "12:00", amPm = "PM", dateFormatted = "Fiesta ST")
         )
 
+    fun onTimeOrTimezoneChanged() {
+        clockProvider.notifyTimeOrTimezoneChanged()
+    }
+
+    fun refreshBluetoothState() {
+        bluetoothService.refreshState()
+    }
+
     fun selectDriverMode(mode: DriverMode) {
         vehicleModeService.setDriverMode(mode)
     }

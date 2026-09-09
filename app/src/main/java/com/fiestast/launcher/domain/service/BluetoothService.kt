@@ -7,4 +7,5 @@ interface BluetoothService {
     val status: StateFlow<ServiceStatus>
     val connectedDeviceName: StateFlow<String?>
     val isBluetoothEnabled: StateFlow<Boolean>
+    fun refreshState()
 }
