@@ -11,26 +11,40 @@ import android.util.Log
 
 /**
  * Foundational NotificationListenerService architecture for the Fiesta ST launcher.
- * Prepared for subsequent Music (MediaSessionManager) and Navigation guidance extraction phases.
+ * Connects directly to real Android MediaSessionManager and Navigation notification guidance.
  */
 class LauncherNotificationListener : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
         Log.d(TAG, "LauncherNotificationListener connected successfully.")
+        NotificationListenerBridge.setActiveService(this)
+        NotificationListenerBridge.notifyConnected()
     }
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
         Log.d(TAG, "LauncherNotificationListener disconnected.")
+        NotificationListenerBridge.setActiveService(null)
+        NotificationListenerBridge.notifyDisconnected()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        // Architecture ready for Phase 2 (Media) & Phase 3 (Navigation guidance)
+        super.onNotificationPosted(sbn)
+        if (sbn != null) {
+            NotificationListenerBridge.notifyNotificationPosted(sbn)
+        } else {
+            NotificationListenerBridge.notifyNotificationChanged()
+        }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        // Architecture ready for Phase 2 (Media) & Phase 3 (Navigation guidance)
+        super.onNotificationRemoved(sbn)
+        if (sbn != null) {
+            NotificationListenerBridge.notifyNotificationRemoved(sbn)
+        } else {
+            NotificationListenerBridge.notifyNotificationChanged()
+        }
     }
 
     companion object {

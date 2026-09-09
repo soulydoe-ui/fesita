@@ -13,6 +13,7 @@ interface LauncherPreferencesRepository {
     fun set24HourFormat(enabled: Boolean)
     fun setDriverMode(mode: DriverMode)
     fun setMetricUnits(enabled: Boolean)
+    fun setPreferredNavigationPackage(packageName: String?)
 }
 
 class SharedPreferencesLauncherRepository(
@@ -34,10 +35,12 @@ class SharedPreferencesLauncherRepository(
             DriverMode.NORMAL
         }
         val metric = prefs.getBoolean(KEY_METRIC, true)
+        val preferredNav = prefs.getString(KEY_PREFERRED_NAV, null)
         return LauncherPreferences(
             is24HourFormat = is24h,
             selectedDriverMode = mode,
-            isMetricUnits = metric
+            isMetricUnits = metric,
+            preferredNavigationPackage = preferredNav
         )
     }
 
@@ -56,10 +59,20 @@ class SharedPreferencesLauncherRepository(
         _preferences.value = _preferences.value.copy(isMetricUnits = enabled)
     }
 
+    override fun setPreferredNavigationPackage(packageName: String?) {
+        if (packageName == null) {
+            prefs.edit().remove(KEY_PREFERRED_NAV).apply()
+        } else {
+            prefs.edit().putString(KEY_PREFERRED_NAV, packageName).apply()
+        }
+        _preferences.value = _preferences.value.copy(preferredNavigationPackage = packageName)
+    }
+
     companion object {
         private const val PREFS_NAME = "fiesta_st_launcher_prefs"
         private const val KEY_24_HOUR = "key_24_hour_format"
         private const val KEY_DRIVER_MODE = "key_driver_mode"
         private const val KEY_METRIC = "key_metric_units"
+        private const val KEY_PREFERRED_NAV = "key_preferred_navigation_package"
     }
 }

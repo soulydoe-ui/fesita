@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fiestast.launcher.navigation.NavRoutes
+import com.fiestast.launcher.ui.icons.AppleCarPlayIcon
 import com.fiestast.launcher.ui.theme.BrightRed
 import com.fiestast.launcher.ui.theme.CardBorder
 import com.fiestast.launcher.ui.theme.LightGray
@@ -57,7 +57,7 @@ val DockItems = listOf(
     DockItem(NavRoutes.RADIO, "Radio", Icons.Default.Radio, "dock_radio"),
     DockItem(NavRoutes.APPS, "Apps", Icons.Default.Apps, "dock_apps"),
     DockItem(NavRoutes.SETTINGS, "Settings", Icons.Default.Settings, "dock_settings"),
-    DockItem(NavRoutes.ZLINK, "ZLink", Icons.Default.Smartphone, "dock_zlink")
+    DockItem(NavRoutes.ZLINK, "ZLink", AppleCarPlayIcon, "dock_zlink")
 )
 
 /**

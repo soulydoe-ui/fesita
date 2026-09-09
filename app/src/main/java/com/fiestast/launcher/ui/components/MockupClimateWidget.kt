@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Sync
@@ -68,14 +69,40 @@ import com.fiestast.launcher.ui.theme.PureWhite
 fun MockupClimateWidget(
     status: ServiceStatus,
     onNavigateSection: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    driverTemp: Float? = null,
+    passengerTemp: Float? = null,
+    fanSpeed: Int? = null,
+    isAcOn: Boolean? = null,
+    isAutoOn: Boolean? = null,
+    isFrontDefrostOn: Boolean? = null,
+    isRearDefrostOn: Boolean? = null,
+    isRecirculationOn: Boolean? = null,
+    onDriverTempUp: () -> Unit = {},
+    onDriverTempDown: () -> Unit = {},
+    onPassengerTempUp: () -> Unit = {},
+    onPassengerTempDown: () -> Unit = {},
+    onToggleAc: () -> Unit = {},
+    onToggleAuto: () -> Unit = {},
+    onCycleFan: () -> Unit = {},
+    onToggleDefrost: () -> Unit = {},
+    onToggleRecirc: () -> Unit = {}
 ) {
     val isConnected = status is ServiceStatus.Connected
-    var acActive by remember { mutableStateOf(false) }
-    var autoActive by remember { mutableStateOf(false) }
-    var defrostActive by remember { mutableStateOf(false) }
-    var recircActive by remember { mutableStateOf(false) }
-    var fanLevel by remember { mutableIntStateOf(2) }
+    var localAcActive by remember { mutableStateOf(false) }
+    var localAutoActive by remember { mutableStateOf(false) }
+    var localDefrostActive by remember { mutableStateOf(false) }
+    var localRecircActive by remember { mutableStateOf(false) }
+    var localFanLevel by remember { mutableIntStateOf(0) }
+
+    val acActive = isAcOn ?: localAcActive
+    val autoActive = isAutoOn ?: localAutoActive
+    val defrostActive = isFrontDefrostOn ?: localDefrostActive
+    val recircActive = isRecirculationOn ?: localRecircActive
+    val effectiveFanLevel = fanSpeed ?: localFanLevel
+
+    val driverTempText = driverTemp?.let { String.format(java.util.Locale.US, "%.1f°", it) } ?: "--.-°"
+    val passengerTempText = passengerTemp?.let { String.format(java.util.Locale.US, "%.1f°", it) } ?: "--.-°"
 
     Box(
         modifier = modifier
@@ -107,8 +134,8 @@ fun MockupClimateWidget(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        ClimateSquareButton(icon = Icons.Default.Add, onClick = {})
-                        ClimateSquareButton(icon = Icons.Default.Remove, onClick = {})
+                        ClimateSquareButton(icon = Icons.Default.Add, onClick = onDriverTempUp)
+                        ClimateSquareButton(icon = Icons.Default.Remove, onClick = onDriverTempDown)
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -116,7 +143,7 @@ fun MockupClimateWidget(
                     // Temperature readout
                     Column(horizontalAlignment = Alignment.Start) {
                         Text(
-                            text = if (isConnected) "21.5°" else "--.-°",
+                            text = driverTempText,
                             color = PureWhite,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
@@ -144,7 +171,7 @@ fun MockupClimateWidget(
                 ) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = if (isConnected) "21.5°" else "--.-°",
+                            text = passengerTempText,
                             color = PureWhite,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
@@ -163,8 +190,8 @@ fun MockupClimateWidget(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        ClimateSquareButton(icon = Icons.Default.Add, onClick = {})
-                        ClimateSquareButton(icon = Icons.Default.Remove, onClick = {})
+                        ClimateSquareButton(icon = Icons.Default.Add, onClick = onPassengerTempUp)
+                        ClimateSquareButton(icon = Icons.Default.Remove, onClick = onPassengerTempDown)
                     }
                 }
             }
@@ -180,12 +207,18 @@ fun MockupClimateWidget(
                 ClimateActionPill(
                     label = "A/C",
                     active = acActive,
-                    onClick = { acActive = !acActive }
+                    onClick = {
+                        localAcActive = !localAcActive
+                        onToggleAc()
+                    }
                 )
                 ClimateActionPill(
                     label = "AUTO",
                     active = autoActive,
-                    onClick = { autoActive = !autoActive }
+                    onClick = {
+                        localAutoActive = !localAutoActive
+                        onToggleAuto()
+                    }
                 )
 
                 // Fan Level Pill with icon + 4 segmented level bars
@@ -194,7 +227,10 @@ fun MockupClimateWidget(
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color(0xFF161922))
                         .border(1.dp, CardBorder.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-                        .clickable { fanLevel = (fanLevel + 1) % 5 }
+                        .clickable {
+                            localFanLevel = (localFanLevel + 1) % 5
+                            onCycleFan()
+                        }
                         .padding(horizontal = 6.dp, vertical = 5.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -215,7 +251,7 @@ fun MockupClimateWidget(
                                     .height(10.dp)
                                     .clip(RoundedCornerShape(1.dp))
                                     .background(
-                                        if (i <= fanLevel) BrightRed else Color(0xFF282D3B)
+                                        if (i <= effectiveFanLevel) BrightRed else Color(0xFF282D3B)
                                     )
                             )
                         }
@@ -232,23 +268,41 @@ fun MockupClimateWidget(
                     icon = Icons.Default.Waves,
                     label = "Defrost",
                     active = defrostActive,
-                    onClick = { defrostActive = !defrostActive }
+                    onClick = {
+                        localDefrostActive = !localDefrostActive
+                        onToggleDefrost()
+                    }
                 )
                 ClimateActionIconPill(
                     icon = Icons.Default.DirectionsCar,
                     label = "Recirc",
                     active = recircActive,
-                    onClick = { recircActive = !recircActive }
+                    onClick = {
+                        localRecircActive = !localRecircActive
+                        onToggleRecirc()
+                    }
                 )
             }
 
-            // 3. Bottom Warning Pill: [! CLIMATE API UNAVAILABLE]
+            // 3. Bottom Status Pill: Honest status representation
+            val isConnectedState = status is ServiceStatus.Connected
+            val isAvailableState = status is ServiceStatus.Available
+            val badgeBg = if (isConnectedState) Color(0xFF101B14) else Color(0xFF1B1812)
+            val badgeBorder = if (isConnectedState) Color(0xFF10B981).copy(alpha = 0.65f) else Color(0xFFD97706).copy(alpha = 0.65f)
+            val badgeTint = if (isConnectedState) Color(0xFF10B981) else Color(0xFFF59E0B)
+            val badgeIcon = if (isConnectedState) Icons.Default.CheckCircle else Icons.Default.WarningAmber
+            val badgeText = when {
+                isConnectedState -> "CAN BUS CLIMATE ACTIVE"
+                isAvailableState -> status.message.uppercase(java.util.Locale.US)
+                else -> "CLIMATE API UNAVAILABLE"
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.70f)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFF1B1812))
-                    .border(1.dp, Color(0xFFD97706).copy(alpha = 0.65f), RoundedCornerShape(14.dp))
+                    .background(badgeBg)
+                    .border(1.dp, badgeBorder, RoundedCornerShape(14.dp))
                     .padding(horizontal = 10.dp, vertical = 3.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -257,15 +311,15 @@ fun MockupClimateWidget(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.WarningAmber,
-                        contentDescription = "Unavailable",
-                        tint = Color(0xFFF59E0B),
+                        imageVector = badgeIcon,
+                        contentDescription = badgeText,
+                        tint = badgeTint,
                         modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "CLIMATE API UNAVAILABLE",
-                        color = Color(0xFFF59E0B),
+                        text = badgeText,
+                        color = badgeTint,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp

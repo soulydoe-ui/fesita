@@ -4,15 +4,45 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- Query installed launcher applications for AppLauncherService -->
+    <!-- Query installed launcher applications for AppLauncherService and Radio backend -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_MUSIC" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.RADIO_SEARCH" />
+        </intent>
+        <package android:name="com.android.fmradio" />
+        <package android:name="com.caf.fmradio" />
+        <package android:name="com.mediatek.fmradio" />
+        <package android:name="com.syu.radio" />
+        <package android:name="com.syu.fm" />
+        <package android:name="com.microntek.radio" />
+        <package android:name="com.ts.radio" />
+        <intent>
+            <action android:name="android.car.action.HVAC_STATUS" />
+        </intent>
+        <package android:name="com.syu.canbus" />
+        <package android:name="com.ts.can" />
+        <package android:name="com.microntek.controlinfo" />
+        <package android:name="com.microntek.canbus" />
+        <package android:name="com.microntek.hvac" />
+        <package android:name="com.hiworld.canbus" />
+        <package android:name="com.raise.canbus" />
+        <package android:name="com.simplesoft.canbus" />
+        <package android:name="com.szchoi.canbus" />
+        <package android:name="com.android.car.hvac" />
     </queries>
 
     <application

@@ -57,8 +57,17 @@ fun HomeScreen(
     val mediaStatus by viewModel.mediaStatus.collectAsStateWithLifecycle()
     val currentMedia by viewModel.currentMedia.collectAsStateWithLifecycle()
     val climateStatus by viewModel.climateStatus.collectAsStateWithLifecycle()
+    val driverTemp by viewModel.driverTempCelsius.collectAsStateWithLifecycle()
+    val passengerTemp by viewModel.passengerTempCelsius.collectAsStateWithLifecycle()
+    val fanSpeed by viewModel.fanSpeed.collectAsStateWithLifecycle()
+    val isAcOn by viewModel.isAcOn.collectAsStateWithLifecycle()
+    val isAutoOn by viewModel.isAutoOn.collectAsStateWithLifecycle()
+    val isFrontDefrostOn by viewModel.isFrontDefrostOn.collectAsStateWithLifecycle()
+    val isRearDefrostOn by viewModel.isRearDefrostOn.collectAsStateWithLifecycle()
+    val isRecirculationOn by viewModel.isRecirculationOn.collectAsStateWithLifecycle()
     val radioStatus by viewModel.radioStatus.collectAsStateWithLifecycle()
     val radioFrequency by viewModel.radioFrequency.collectAsStateWithLifecycle()
+    val navigationGuidance by viewModel.navigationGuidance.collectAsStateWithLifecycle()
 
     val radioFreqString = radioFrequency?.let { String.format(java.util.Locale.US, "%.1f", it) }
 
@@ -110,6 +119,7 @@ fun HomeScreen(
                         viewModel.launchNavigation()
                         onNavigate(NavRoutes.NAVIGATION)
                     },
+                    navigationState = navigationGuidance,
                     modifier = Modifier
                         .weight(1.0f)
                         .fillMaxHeight()
@@ -130,6 +140,9 @@ fun HomeScreen(
                     status = mediaStatus,
                     mediaInfo = currentMedia,
                     onNavigateSection = { onNavigate(NavRoutes.MUSIC) },
+                    onPlayPause = { viewModel.playPauseMedia() },
+                    onPrevious = { viewModel.previousMedia() },
+                    onNext = { viewModel.nextMedia() },
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
@@ -138,6 +151,23 @@ fun HomeScreen(
                 // Climate Widget
                 MockupClimateWidget(
                     status = climateStatus,
+                    driverTemp = driverTemp,
+                    passengerTemp = passengerTemp,
+                    fanSpeed = fanSpeed,
+                    isAcOn = isAcOn,
+                    isAutoOn = isAutoOn,
+                    isFrontDefrostOn = isFrontDefrostOn,
+                    isRearDefrostOn = isRearDefrostOn,
+                    isRecirculationOn = isRecirculationOn,
+                    onDriverTempUp = { viewModel.adjustDriverTemperature(0.5f) },
+                    onDriverTempDown = { viewModel.adjustDriverTemperature(-0.5f) },
+                    onPassengerTempUp = { viewModel.adjustPassengerTemperature(0.5f) },
+                    onPassengerTempDown = { viewModel.adjustPassengerTemperature(-0.5f) },
+                    onToggleAc = { viewModel.toggleAc() },
+                    onToggleAuto = { viewModel.toggleAuto() },
+                    onCycleFan = { viewModel.adjustFanSpeed(1) },
+                    onToggleDefrost = { viewModel.toggleFrontDefrost() },
+                    onToggleRecirc = { viewModel.toggleRecirculation() },
                     onNavigateSection = { onNavigate(NavRoutes.CLIMATE) },
                     modifier = Modifier
                         .weight(1.15f)

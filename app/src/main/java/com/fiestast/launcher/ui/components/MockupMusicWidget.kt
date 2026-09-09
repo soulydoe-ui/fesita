@@ -1,6 +1,7 @@
 package com.fiestast.launcher.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,22 +20,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,23 +45,27 @@ import com.fiestast.launcher.ui.theme.BrightRed
 import com.fiestast.launcher.ui.theme.CardBorder
 import com.fiestast.launcher.ui.theme.LightGray
 import com.fiestast.launcher.ui.theme.PureWhite
+import java.util.Locale
 
 /**
  * Music Player Widget for the Home screen:
  * - Shows authentic MediaSession track details when an active media session exists
  * - When no media is playing, displays honest "NO ACTIVE MEDIA" empty state
  *   rather than faking "The Weeknd / Blinding Lights"
- * - Maintains functional media controls ready for system playback
+ * - Connects to real Android MediaSession playback controls
  */
 @Composable
 fun MockupMusicWidget(
     status: ServiceStatus,
     mediaInfo: MediaInfo?,
     onNavigateSection: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPlayPause: () -> Unit = {},
+    onPrevious: () -> Unit = {},
+    onNext: () -> Unit = {}
 ) {
     val hasActiveMedia = status is ServiceStatus.Connected && mediaInfo != null && !mediaInfo.title.isNullOrBlank()
-    var isPlaying by remember { mutableStateOf(mediaInfo?.isPlaying ?: false) }
+    val isPlaying = mediaInfo?.isPlaying == true
 
     Box(
         modifier = modifier
@@ -90,30 +94,39 @@ fun MockupMusicWidget(
                         .border(1.dp, if (hasActiveMedia) BrightRed.copy(alpha = 0.6f) else CardBorder.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (hasActiveMedia) {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            if (size.width < 5f || size.height < 5f) return@Canvas
-                            try {
-                                val w = size.width
-                                val h = size.height
-                                drawCircle(
-                                    brush = Brush.radialGradient(
-                                        colors = listOf(BrightRed.copy(alpha = 0.7f), Color(0xFF161922)),
-                                        center = Offset(w * 0.5f, h * 0.5f),
-                                        radius = maxOf(1f, w * 0.5f)
+                    if (hasActiveMedia && mediaInfo?.artworkBitmap != null) {
+                        Image(
+                            bitmap = mediaInfo.artworkBitmap.asImageBitmap(),
+                            contentDescription = "Album Art",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        if (hasActiveMedia) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                if (size.width < 5f || size.height < 5f) return@Canvas
+                                try {
+                                    val w = size.width
+                                    val h = size.height
+                                    drawCircle(
+                                        brush = Brush.radialGradient(
+                                            colors = listOf(BrightRed.copy(alpha = 0.7f), Color(0xFF161922)),
+                                            center = Offset(w * 0.5f, h * 0.5f),
+                                            radius = maxOf(1f, w * 0.5f)
+                                        )
                                     )
-                                )
-                            } catch (_: Throwable) {
-                                // Fail safely
+                                } catch (_: Throwable) {
+                                    // Fail safely
+                                }
                             }
                         }
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "Music Art",
+                            tint = if (hasActiveMedia) PureWhite else LightGray.copy(alpha = 0.6f),
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
-                    Icon(
-                        imageVector = Icons.Default.MusicNote,
-                        contentDescription = "Music Art",
-                        tint = if (hasActiveMedia) PureWhite else LightGray.copy(alpha = 0.6f),
-                        modifier = Modifier.size(24.dp)
-                    )
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
@@ -162,6 +175,10 @@ fun MockupMusicWidget(
 
             // 2. Playback Scrubber Bar
             Column(modifier = Modifier.fillMaxWidth()) {
+                val progressFraction = if (hasActiveMedia && mediaInfo != null && mediaInfo.durationMs > 0) {
+                    (mediaInfo.positionMs.toFloat() / mediaInfo.durationMs.toFloat()).coerceIn(0f, 1f)
+                } else 0f
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -169,10 +186,10 @@ fun MockupMusicWidget(
                         .clip(RoundedCornerShape(1.5.dp))
                         .background(Color(0xFF232834))
                 ) {
-                    if (hasActiveMedia) {
+                    if (hasActiveMedia && progressFraction > 0f) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.35f)
+                                .fillMaxWidth(progressFraction)
                                 .height(3.dp)
                                 .background(BrightRed)
                         )
@@ -185,13 +202,15 @@ fun MockupMusicWidget(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    val posText = if (hasActiveMedia && mediaInfo != null) formatTimeMs(mediaInfo.positionMs) else "--:--"
+                    val durText = if (hasActiveMedia && mediaInfo != null && mediaInfo.durationMs > 0) formatTimeMs(mediaInfo.durationMs) else "--:--"
                     Text(
-                        text = if (hasActiveMedia) "1:15" else "--:--",
+                        text = posText,
                         color = LightGray.copy(alpha = 0.6f),
                         fontSize = 9.sp
                     )
                     Text(
-                        text = if (hasActiveMedia) "3:40" else "--:--",
+                        text = durText,
                         color = LightGray.copy(alpha = 0.6f),
                         fontSize = 9.sp
                     )
@@ -210,7 +229,7 @@ fun MockupMusicWidget(
                         .size(32.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF161922))
-                        .clickable { },
+                        .clickable(enabled = mediaInfo?.canSkipPrevious ?: true) { onPrevious() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -235,11 +254,11 @@ fun MockupMusicWidget(
                             )
                         )
                         .border(1.dp, BrightRed, RoundedCornerShape(17.dp))
-                        .clickable { isPlaying = !isPlaying },
+                        .clickable { onPlayPause() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.PlayArrow,
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (isPlaying) "Pause" else "Play",
                         tint = PureWhite,
                         modifier = Modifier.size(20.dp)
@@ -254,7 +273,7 @@ fun MockupMusicWidget(
                         .size(32.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF161922))
-                        .clickable { },
+                        .clickable(enabled = mediaInfo?.canSkipNext ?: true) { onNext() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -267,4 +286,12 @@ fun MockupMusicWidget(
             }
         }
     }
+}
+
+private fun formatTimeMs(millis: Long): String {
+    if (millis <= 0) return "0:00"
+    val totalSec = millis / 1000
+    val min = totalSec / 60
+    val sec = totalSec % 60
+    return String.format(Locale.getDefault(), "%d:%02d", min, sec)
 }

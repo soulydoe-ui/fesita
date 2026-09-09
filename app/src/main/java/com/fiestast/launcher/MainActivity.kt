@@ -65,7 +65,7 @@ open class MainActivity : ComponentActivity() {
         val climateService = AndroidClimateService(applicationContext)
         val bluetoothService = AndroidBluetoothService(applicationContext)
         val phoneService = AndroidPhoneService(applicationContext)
-        val navigationService = AndroidNavigationService(applicationContext)
+        val navigationService = AndroidNavigationService(applicationContext, prefsRepo)
         val appLauncherService = AndroidAppLauncherService(applicationContext)
         val zlinkService = AndroidZLinkService(applicationContext)
 
@@ -110,6 +110,8 @@ open class MainActivity : ComponentActivity() {
         if (::viewModel.isInitialized) {
             viewModel.refreshBluetoothState()
             viewModel.onTimeOrTimezoneChanged()
+            viewModel.refreshMediaSessions()
+            viewModel.refreshNavigationApps()
         }
     }
 

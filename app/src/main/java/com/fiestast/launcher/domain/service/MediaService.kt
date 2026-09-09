@@ -11,4 +11,6 @@ interface MediaService {
     fun pause()
     fun next()
     fun previous()
+    fun seekTo(positionMs: Long) {}
+    fun refreshSessions() {}
 }

@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fiestast.launcher.domain.model.NavigationState
 import com.fiestast.launcher.ui.theme.BrightRed
 import com.fiestast.launcher.ui.theme.CardBorder
 import com.fiestast.launcher.ui.theme.LightGray
@@ -52,13 +53,14 @@ import com.fiestast.launcher.ui.theme.PureWhite
 /**
  * Navigation / Map Card for the Home screen:
  * - Premium automotive dark map background with road grid & GPS coordinate lines
- * - Honest Empty State: "NAVIGATION READY - Tap to open navigation"
- * - Never invents fake turn instructions (e.g. 300m Avenue Mohamed VI) or fake ETAs (12min 8.4km)
+ * - Real guidance state when navigating; honest empty state when idle
+ * - Never invents fake turn instructions or fake ETAs
  * - Tapping launches the system navigation app (Google Maps / Waze)
  */
 @Composable
 fun MockupMapWidget(
     onLaunchNavigation: () -> Unit,
+    navigationState: NavigationState = NavigationState.Idle,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "navPulse")
@@ -176,7 +178,29 @@ fun MockupMapWidget(
             )
         }
 
-        // 3. Center Honest Empty State: "NAVIGATION READY" + "Tap to open navigation"
+        // 3. Center State: Real Guidance if NAVIGATING, Honest Empty State if IDLE / UNAVAILABLE
+        val (mainTitle, subtitle) = when (navigationState) {
+            is NavigationState.Navigating -> {
+                val instruction = navigationState.instruction
+                val destination = navigationState.destination
+                val distance = navigationState.distance
+                val title = instruction ?: destination ?: "NAVIGATING"
+                val sub = when {
+                    instruction != null && distance != null -> "$distance • ${destination ?: "Active Route"}"
+                    distance != null -> distance
+                    destination != null && destination != title -> destination
+                    else -> "Active Guidance"
+                }
+                Pair(title, sub)
+            }
+            is NavigationState.Unavailable -> {
+                Pair("NAVIGATION READY", "Tap to open navigation")
+            }
+            is NavigationState.Idle -> {
+                Pair("NAVIGATION READY", "Tap to open navigation")
+            }
+        }
+
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -200,7 +224,7 @@ fun MockupMapWidget(
             ) {
                 Icon(
                     imageVector = Icons.Default.Navigation,
-                    contentDescription = "Navigation Ready",
+                    contentDescription = mainTitle,
                     tint = Color(0xFF00A3FF),
                     modifier = Modifier.size(18.dp)
                 )
@@ -209,20 +233,22 @@ fun MockupMapWidget(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "NAVIGATION READY",
+                text = mainTitle,
                 color = PureWhite,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.8.sp
+                letterSpacing = 0.8.sp,
+                maxLines = 1
             )
 
             Spacer(modifier = Modifier.height(2.dp))
 
             Text(
-                text = "Tap to open navigation",
+                text = subtitle,
                 color = LightGray.copy(alpha = 0.8f),
                 fontSize = 10.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                maxLines = 1
             )
         }
 

@@ -19,6 +19,9 @@ fun LauncherNavHost(
     modifier: Modifier = Modifier
 ) {
     val onNavigate: (String) -> Unit = { targetRoute ->
+        if (targetRoute == NavRoutes.ZLINK) {
+            viewModel.launchZLink()
+        }
         if (navController.currentDestination?.route != targetRoute) {
             navController.navigate(targetRoute) {
                 // Pop up to home to avoid backstack bloat on automotive launcher
